@@ -1,0 +1,62 @@
+[
+  {
+    "name": "advanced-reporting-grafana-mongodb.json",
+    "path": "data/projects/advanced-reporting-grafana-mongodb.json",
+    "type": "file"
+  },
+  {
+    "name": "advanced-reporting-grafana-mongodb.md",
+    "path": "data/projects/advanced-reporting-grafana-mongodb.md",
+    "type": "file"
+  },
+  {
+    "name": "automation-framework-playwright.json",
+    "path": "data/projects/automation-framework-playwright.json",
+    "type": "file"
+  },
+  {
+    "name": "automation-framework-playwright.md",
+    "path": "data/projects/automation-framework-playwright.md",
+    "type": "file"
+  },
+  {
+    "name": "robot-playwright.json",
+    "path": "data/projects/robot-playwright.json",
+    "type": "file"
+  },
+  {
+    "name": "robot-playwright.md",
+    "path": "data/projects/robot-playwright.md",
+    "type": "file"
+  },
+  {
+    "name": "sampl-one.json",
+    "path": "data/projects/sampl-one.json",
+    "type": "file"
+  },
+  {
+    "name": "sampl-one.md",
+    "path": "data/projects/sampl-one.md",
+    "type": "file"
+  },
+  {
+    "name": "self-healing-robot-framework-gemini.json",
+    "path": "data/projects/self-healing-robot-framework-gemini.json",
+    "type": "file"
+  },
+  {
+    "name": "self-healing-robot-framework-gemini.md",
+    "path": "data/projects/self-healing-robot-framework-gemini.md",
+    "type": "file"
+  },
+  {
+    "name": "test-kafka-service-using-test-container.json",
+    "path": "data/projects/test-kafka-service-using-test-container.json",
+    "type": "file"
+  },
+  {
+    "name": "test-kafka-service-using-test-container.md",
+    "path": "data/projects/test-kafka-service-using-test-container.md",
+    "type": "file"
+  }
+]
