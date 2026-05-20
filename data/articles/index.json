@@ -1,0 +1,22 @@
+[
+  {
+    "name": "a-developer-s-guide-to-retrieval-augmented-generation-rag.json",
+    "path": "data/articles/a-developer-s-guide-to-retrieval-augmented-generation-rag.json",
+    "type": "file"
+  },
+  {
+    "name": "a-developer-s-guide-to-retrieval-augmented-generation-rag.md",
+    "path": "data/articles/a-developer-s-guide-to-retrieval-augmented-generation-rag.md",
+    "type": "file"
+  },
+  {
+    "name": "installing-minikube-on-windows-for-kubernetes.json",
+    "path": "data/articles/installing-minikube-on-windows-for-kubernetes.json",
+    "type": "file"
+  },
+  {
+    "name": "installing-minikube-on-windows-for-kubernetes.md",
+    "path": "data/articles/installing-minikube-on-windows-for-kubernetes.md",
+    "type": "file"
+  }
+]
