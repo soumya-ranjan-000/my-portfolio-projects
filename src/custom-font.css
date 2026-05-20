@@ -1,9 +1,0 @@
-/* Example: Add your custom font files to the public or src directory and update the URL below */
-@font-face {
-  font-family: 'MyCustomFont';
-  src: url('/fonts/MyCustomFont.woff2') format('woff2'),
-       url('/fonts/MyCustomFont.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
