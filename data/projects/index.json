@@ -30,16 +30,6 @@
     "type": "file"
   },
   {
-    "name": "sampl-one.json",
-    "path": "data/projects/sampl-one.json",
-    "type": "file"
-  },
-  {
-    "name": "sampl-one.md",
-    "path": "data/projects/sampl-one.md",
-    "type": "file"
-  },
-  {
     "name": "self-healing-robot-framework-gemini.json",
     "path": "data/projects/self-healing-robot-framework-gemini.json",
     "type": "file"
