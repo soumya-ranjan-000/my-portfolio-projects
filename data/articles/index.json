@@ -10,6 +10,16 @@
     "type": "file"
   },
   {
+    "name": "how-a-kubernetes-cluster-works.json",
+    "path": "data/articles/how-a-kubernetes-cluster-works.json",
+    "type": "file"
+  },
+  {
+    "name": "how-a-kubernetes-cluster-works.md",
+    "path": "data/articles/how-a-kubernetes-cluster-works.md",
+    "type": "file"
+  },
+  {
     "name": "installing-minikube-on-windows-for-kubernetes.json",
     "path": "data/articles/installing-minikube-on-windows-for-kubernetes.json",
     "type": "file"
