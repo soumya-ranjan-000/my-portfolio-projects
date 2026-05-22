@@ -1,0 +1,13 @@
+{
+  "id": "how-a-kubernetes-cluster-works",
+  "slug": "how-a-kubernetes-cluster-works",
+  "title": "how a Kubernetes cluster works ?",
+  "excerpt": "A comprehensive guide to understanding Kubernetes cluster architecture, its core components, and how they work together to power modern cloud-native applications.",
+  "coverImage": "",
+  "status": "draft",
+  "tags": [],
+  "notebooks": [],
+  "readTime": "13 min read",
+  "publishDate": "2026-05-22T00:00:00.000Z",
+  "updatedAt": "2026-05-22T17:19:35.748Z"
+}
