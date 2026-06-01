@@ -263,7 +263,9 @@ The API Server cannot write a raw Go memory struct to disk. It needs to flatten 
 
 The API Server acts as an `etcd` client. It initiates an HTTP/2 gRPC `PUT` request to the `etcd` cluster. The data is stored under a highly structured key path matching the resource hierarchy:
 
-$$\text{Key Format: } \texttt{/registry/}\langle\text{resource\_type}\rangle\texttt{/}\langle\text{namespace}\rangle\texttt{/}\langle\text{name}\rangle$$
+
+![image.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/how-a-kubernetes-cluster-works/1780330383397-image.png)
+
 
 For your deployment, the exact key looks like this:
 ` /registry/deployments/default/my-app`
@@ -299,3 +301,94 @@ However, behind the scenes, this write instantly triggers the **Watch System**:
 * The API Server receives this raw event, deserializes it back, and multiplexes it out to any component holding an open HTTP `WATCH` connection to that resource endpoint.
 
 This is the exact handshake that wakes up the **Kube-Controller-Manager** in Phase 3, notifying it that a brand-new desired state has officially been written to the cluster's memory.
+
+The **Watch System** is the central nervous system of Kubernetes. It is the architectural mechanism that allows Kubernetes to be entirely event-driven, highly scalable, and capable of reconciling changes in seconds without melting down the control plane.
+
+Instead of controllers constantly asking the API Server, *"Are we there yet? Any new changes?"* (polling), the API Server streams changes to the controllers the exact millisecond they happen (streaming).
+
+Here is a deep look into how the watch system functions under the hood.
+
+---
+
+### 1. The Core Problem: Why Polling Fails at Scale
+
+Imagine a cluster with 5,000 Pods and 50 different controller loops running inside the control plane.
+
+If every controller had to poll the API Server every 2 seconds to see if anything changed, the API Server would be hit with thousands of heavy `LIST` requests per minute. The server would spend all its CPU cycles reading from `etcd`, serializing massive JSON payloads, and sending them over the network. The cluster would grind to a halt.
+
+The Watch System solves this by establishing a **long-lived, streaming HTTP connection** using standard HTTP chunked transfer encoding.
+
+---
+
+### 2. The Micro-Flow of a Watch Connection
+
+The watch system operates like a subscription model. When a controller (like the ReplicaSet controller) starts up, it initiates a special HTTP request:
+
+```http
+GET /apis/apps/v1/namespaces/default/deployments?watch=true&resourceVersion=10245
+
+```
+
+```
+[Controller] ──(HTTP GET ?watch=true)──> [API Server] ──(gRPC Watch)──> [etcd]
+                                              │
+[Controller] <──(Permanent HTTP Stream)───────┴<──(Stream Events)─────── [etcd]
+
+```
+
+1. **The Request:** The controller tells the API Server it wants to `watch` a specific resource type and passes a specific `resourceVersion`. This version represents the last known state the controller saw.
+2. **The Connection Lock:** The API Server opens an HTTP connection but **does not close it**. It keeps the response channel open indefinitely using an HTTP chunked transfer encoding stream.
+3. **The `etcd` Binding:** The API Server uses `etcd`'s native gRPC `Watch` API to subscribe to the storage keyspace matching that resource (e.g., `/registry/deployments/default/`).
+4. **The Event Stream:** Whenever a resource is created, modified, or deleted, `etcd` pushes a small mutation event to the API Server. The API Server transforms this into a structured Kubernetes API Event and writes it straight into the open HTTP connection to the controller.
+
+---
+
+### 3. The Anatomy of an Event
+
+The data traveling down the watch stream isn't just the raw object. It is wrapped in a special `WatchEvent` envelope that tells the controller exactly *what* happened:
+
+```json
+{
+  "type": "ADDED", 
+  "object": {
+    "kind": "Pod",
+    "metadata": { "name": "my-pod", "resourceVersion": "10567" },
+    "spec": { ... }
+  }
+}
+
+```
+
+There are four primary event types sent down the wire:
+
+* **`ADDED`:** A brand new resource was created.
+* **`MODIFIED`:** An existing resource was changed (labels, specs, status, etc.).
+* **`DELETED`:** A resource was removed from the cluster.
+* **`BOOKMARK`:** A special, low-overhead sync event used to update the client on the current `resourceVersion` even if no data has changed (preventing timeouts).
+
+---
+
+### 4. Resiliency & The "Too Old Resource Version" Error
+
+What happens if the network blinks and a controller loses its connection to the API Server?
+
+When the controller reconnects, it sends a `GET ...?watch=true&resourceVersion=10567`, effectively saying, *"Hey, I dropped off at point 10567. Send me everything I missed."*
+
+* **The Cache Hit:** The API Server keeps an in-memory **Watch Cache** (sliding window) of recent historical events. If version `10567` is still in the cache, the API Server catches the controller up by streaming the missed events, and the watch continues smoothly.
+* **The Cache Miss (`410 Gone`):** `etcd` and the API Server cache only retain historical events for a limited window. If the controller was disconnected for too long and asks for a version that has already been purged, the API Server responds with an HTTP status code `410 Gone` (`Too old resource version`).
+
+#### The Recovery:
+
+When a controller hits a `410 Gone`, it knows its history is broken. It triggers a **List-Watch** cycle:
+
+1. It performs a clean, single `LIST` request to fetch the entire current state of the cluster from scratch.
+2. It notes the new, fresh `resourceVersion` returned by that list.
+3. It immediately opens a brand-new `WATCH` stream starting exactly from that new version.
+
+---
+
+### 5. How Controllers Safely Process the Stream: Informers
+
+Because raw watch streams can be finicky to manage, Kubernetes client libraries abstract this entire logic into a component called an **Informer**.
+
+An Informer acts as a local cache inside the controller's memory. When a watch event arrives, the Informer updates its local cache and drops a lightweight key (like `namespace/pod-name`) into a **WorkQueue**. The controller's workers pull keys out of the queue and run their reconciliation logic against the local cache, ensuring the controller almost never needs to make direct, expensive read calls back to the API Server.
