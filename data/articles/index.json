@@ -38,5 +38,15 @@
     "name": "installing-minikube-on-windows-for-kubernetes.md",
     "path": "data/articles/installing-minikube-on-windows-for-kubernetes.md",
     "type": "file"
+  },
+  {
+    "name": "kubernetes-building-blocks.json",
+    "path": "data/articles/kubernetes-building-blocks.json",
+    "type": "file"
+  },
+  {
+    "name": "kubernetes-building-blocks.md",
+    "path": "data/articles/kubernetes-building-blocks.md",
+    "type": "file"
   }
 ]
