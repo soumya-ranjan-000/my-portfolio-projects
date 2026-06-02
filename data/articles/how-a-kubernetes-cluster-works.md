@@ -984,6 +984,28 @@ The control plane runs a non-stop loop that implements a basic engineering contr
 
 ---
 
+![image.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/how-a-kubernetes-cluster-works/1780411051437-image.png)
+
+Now let's look at the detailed component roles — which Kubernetes actors are responsible at each stage:
+
+![image.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/how-a-kubernetes-cluster-works/1780411099144-image.png)
+
+Here's the full picture of how Kubernetes heals itself:
+
+**The core idea — the control loop.** Kubernetes never "fixes" things imperatively. Instead, every controller constantly asks: *"does actual state match desired state?"* If not, it acts. This is called **reconciliation**, and it runs on a loop forever.
+
+**Stage 1 — Detect.** The `kubelet` runs on every node and continuously executes `liveness` and `readiness` probes against each container. A failed liveness probe means the container is dead and needs restarting. A failed readiness probe means the pod should be removed from the Service's load balancer without killing it.
+
+**Stage 2 — Report.** The kubelet pushes the updated pod status to the **API server**, which writes it to **etcd** — the cluster's single source of truth. All controllers watch for these changes via an efficient watch/notify mechanism.
+
+**Stage 3 — Decide.** The relevant controller (ReplicaSet, Deployment, or Node controller) sees that actual state no longer matches desired state and triggers the reconcile loop.
+
+**Stage 4 — Act.** Three things can happen in parallel:
+- The **Scheduler** assigns a new pod to a healthy node.
+- The **restart policy** restarts the container with exponential back-off (10s → 20s → 40s...) to prevent thrashing — this is the `CrashLoopBackOff` state you see in `kubectl get pods`.
+- The **Node controller** evicts all pods from a node that's been unreachable for ~5 minutes, triggering rescheduling elsewhere.
+
+**The loop never stops.** Once the desired state is restored and probes pass, the system returns to steady state — but the controllers keep watching. Any future drift is detected and healed automatically. Click any box in the diagrams to explore that component in more depth.
 ## Deep Dive Scenario: A Worker Node Crashes
 
 To understand the healing flow, let’s trace a catastrophic failure step-by-step: **Worker Node B loses total power**, taking down one of your active application pods.
