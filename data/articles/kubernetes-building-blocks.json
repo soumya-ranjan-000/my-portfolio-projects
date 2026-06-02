@@ -1,0 +1,20 @@
+{
+  "id": "kubernetes-building-blocks",
+  "slug": "kubernetes-building-blocks",
+  "title": "Kubernetes Building Blocks",
+  "excerpt": "Discover the foundational building blocks of a Kubernetes cluster. This guide breaks down how node identities are established and managed through the bootstrapping process with kubeadm and Minikube.",
+  "coverImage": "https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/kubernetes-building-blocks/1780425705536-5cd23d14_62a1_4524_be43_e7daac1a8187.jpg",
+  "status": "published",
+  "tags": [
+    "Kubernetes",
+    "DevOps",
+    "Cloud Native",
+    "Infrastructure",
+    "Minikube",
+    "Kubeadm"
+  ],
+  "notebooks": [],
+  "readTime": "10 min read",
+  "publishDate": "2026-06-02T00:00:00.000Z",
+  "updatedAt": "2026-06-02T18:47:56.306Z"
+}
