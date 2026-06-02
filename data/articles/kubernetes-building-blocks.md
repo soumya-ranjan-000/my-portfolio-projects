@@ -175,3 +175,10 @@ These are called **Static Pods**.
 For a normal application container (like a web server), the YAML file is sent over the network and stored in the database (`etcd`). The `kubelet` waits for the API Server to tell it to run it.
 
 But for the Control Plane, the YAML files live permanently as physical files on that specific machine's disk. If you delete `kube-apiserver.yaml` from that folder, the `kubelet` will instantly delete the API Server container. If you drop it back in, the `kubelet` instantly recreates it.
+
+---
+The control plane nodes run the control plane agents, such as the API Server, Scheduler, Controller Managers, and etcd in addition to the kubelet and kube-proxy node agents, the container runtime, and add-ons for container networking, monitoring, logging, DNS, etc.
+
+Worker nodes run the kubelet and kube-proxy node agents, the container runtime, and add-ons for container networking, monitoring, logging, DNS, etc.
+
+Collectively, the control plane node(s) and the worker node(s) represent the Kubernetes cluster. A cluster’s nodes are systems distributed either on the same private network, across different networks, even across different cloud networks.
