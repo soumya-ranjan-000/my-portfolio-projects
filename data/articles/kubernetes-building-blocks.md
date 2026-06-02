@@ -182,3 +182,397 @@ The control plane nodes run the control plane agents, such as the API Server, Sc
 Worker nodes run the kubelet and kube-proxy node agents, the container runtime, and add-ons for container networking, monitoring, logging, DNS, etc.
 
 Collectively, the control plane node(s) and the worker node(s) represent the Kubernetes cluster. A cluster’s nodes are systems distributed either on the same private network, across different networks, even across different cloud networks.
+
+# Namespaces
+
+Think of a Kubernetes cluster as a **massive tech company building**.
+
+If everyone in the company worked in one giant, open room without any walls, it would be pure chaos. Marketing might accidentally delete Engineering’s whiteboard drawings, and HR might look at confidential sales data.
+
+To fix this, the company builds **floors and offices** to separate teams. In Kubernetes, those virtual walls are called **Namespaces**.
+
+---
+
+## 🏢 The Real-World Analogy
+
+Imagine a building divided into two main sections: the **Marketing Team Floor** and the **Engineering Team Floor**.
+
+* **Duplicate Names Allowed:** The Marketing team has a printer named `printer-01`. The Engineering team *also* has a printer named `printer-01`. Because they are on completely different floors, there is no confusion. If you are on the Marketing floor and say "print to `printer-01`," everyone knows exactly which one you mean.
+* **Resource Quotas:** The building manager might decide that the Marketing floor is only allowed to use 10 reams of paper per week, while Engineering gets 50.
+
+In Kubernetes, the "floors" are **Namespaces**, the "teams" are your developers, the "printers" are your **Pods/Services**, and the "paper limits" are **Resource Quotas**.
+
+---
+
+## 🗺️ How it Looks
+
+Here is a visual map of how a single physical cluster is divided into virtual sub-clusters (Namespaces):
+
+```
++------------------------------------------------------------------------+
+|                       KUBERNETES CLUSTER (The Building)               |
+|                                                                        |
+|  +---------------------------+        +-----------------------------+  |
+|  |  NAMESPACE: MARKETING     |        |   NAMESPACE: ENGINEERING    |  |
+|  |  (Floor 1)                |        |   (Floor 2)                 |  |
+|  |                           |        |                             |  |
+|  |  [Pod: web-app]           |        |   [Pod: web-app]            |  |
+|  |  (Marketing Version)      |        |   (Engineering Version)     |  |
+|  |                           |        |                             |  |
+|  |  [Service: database]      |        |   [Service: database]       |  |
+|  +---------------------------+        +-----------------------------+  |
++------------------------------------------------------------------------+
+
+```
+
+### Request Flow: How Traffic Finds the Right Resource
+
+When an application wants to talk to a database, Kubernetes uses the Namespace to route the request correctly:
+
+```
+[ Your Request ] 
+       │
+       ▼
+Is a Namespace specified?
+       │
+       ├─► YES ──► Route directly to that Namespace (e.g., Engineering) ──► Finds [database]
+       │
+       └─► NO  ──► Automatically routes to the [default] Namespace  ──► Finds [database]
+
+```
+
+
+* **Definition:** Namespaces partition a single physical cluster into multiple **virtual sub-clusters**. They provide unique naming scopes, meaning two different resources can share the exact same name as long as they live in different Namespaces.
+* **The Out-of-the-Box Namespaces:** Kubernetes creates four default namespaces automatically:
+1. `default`: Where your apps go by default if you don't specify a namespace.
+2. `kube-system`: The highly sensitive area reserved for Kubernetes' own internal features and control plane agents.
+3. `kube-public`: An unsecured, publicly readable namespace used for cluster-wide public data.
+4. `kube-node-lease`: A newer namespace that tracks cluster node heartbeats (node leases) to ensure they are alive.
+
+* **Key Commands:**
+* To view namespaces: `kubectl get namespaces`
+* To create a namespace: `kubectl create namespace new-namespace-name`
+
+---
+
+**Guardrails (Limits):** To prevent one namespace from hogging all the cluster's CPU or memory, administrators use **Resource Quotas** (to limit total namespace consumption) and **LimitRanges** (to set min/max resource constraints on individual containers).
+
+---
+
+# 📦 Kubernetes Pods
+
+
+![image.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/kubernetes-building-blocks/1780426719022-image.png)
+
+
+
+## 💡 What is a Pod?
+* **Definition:** A [Pod](https://trainingportal.linuxfoundation.org/learn/course/introduction-to-kubernetes/kubernetes-building-blocks-1/kubernetes-building-blocks?page=4) is the **smallest, most basic deployable workload object** in Kubernetes. It represents a single instance of a running application.
+* **Composition:** A logical collection of **one or more containers** enclosed and isolated together.
+
+---
+To understand how a Pod is built and what it looks like under the hood, we have to look at it from two different angles: **how Kubernetes builds it technically**, and **what the structural blueprint looks like**.
+
+---
+
+## 🛠️ How a Pod is Built (The Mechanics)
+
+A Pod isn't a physical object or an actual piece of software; it is a **Linux abstraction**. When you tell Kubernetes to create a Pod, here is exactly what happens behind the scenes:
+
+1. **The Blueprint:** You hand a YAML or JSON file to the Kubernetes API.
+2. **The Evaluation:** The `kubelet` (the worker bee agent on a node) looks at your configuration.
+3. **The Infra Container (The Secret Ingredient):** Before your actual application container starts, Kubernetes launches a hidden container called the **`pause` container** (or infrastructure container).
+* This tiny container does nothing except hold open a Linux network namespace and obtain an IP address.
+
+
+4. **The App Containers Join In:** Your actual application containers (like Nginx) are then launched inside that exact same network namespace. Because they share the same namespace as the `pause` container, they instantly share the same IP address and can talk to each other via `localhost`.
+
+---
+
+## 🎨 What a Pod Looks Like (The Structure)
+
+Visually, a Pod looks like an isolated bubble containing shared infrastructure that any container inside the bubble can access.
+
+As shown in the course material diagram on [Single- and Multi-Container Pods](https://trainingportal.linuxfoundation.org/learn/course/introduction-to-kubernetes/kubernetes-building-blocks-1/kubernetes-building-blocks?page=4), a Pod acts as a bounding circle enclosing the IP address, storage volumes, and containerized apps. Here is a text-based breakdown of that structure:
+
+```
++-------------------------------------------------------------+
+|                     POD BOUNDARY                            |
+|  (Has a single Cluster IP Address: e.g., 10.10.10.4)        |
+|                                                             |
+|   +------------------+             +--------------------+   |
+|   |  CONTAINER 1     |             |  CONTAINER 2       |   |
+|   |  (e.g., Web App) |             |  (e.g., Log Agent) |   |
+|   +--------┬---------+             +---------┬----------+   |
+|            │                                 │              |
+|            │     Both talk via localhost     │              |
+|            └─────────────────────────────────┘              |
+|                                                             |
+|   +─────────────────────────────────────────────────────+   |
+|   |                SHARED STORAGE VOLUME                |   |
+|   | (Both containers can read/write to this same space) |   |
+|   +─────────────────────────────────────────────────────+   |
++-------------------------------------------------------------+
+
+```
+
+---
+
+## 📄 The Blueprint (What it looks like in Code)
+
+If you look at a Pod in your code editor, it is defined as a declarative manifest block. Every single Pod is built using **four required root fields**:
+
+```yaml
+apiVersion: v1        # 1. Ruleset version being used
+kind: Pod             # 2. The type of object you are building
+metadata:             # 3. Workload accounting (Names, labels, identification)
+  name: my-web-pod
+  labels:
+    env: production
+spec:                 # 4. The actual technical specifications for the containers
+  containers:
+  - name: web-container
+    image: nginx:1.22.1
+    ports:
+    - containerPort: 80
+
+```
+
+---
+
+## ⚙️ Key Architectural Characteristics
+* **Co-scheduling:** All containers inside a single Pod are always scheduled together on the **same physical or virtual host node**.
+* **Shared Network Namespace:** Containers within a Pod share a **single IP address** assigned to the Pod.
+  * They communicate with each other locally via `localhost`.
+* **Shared Storage:** Containers can mount the **same external storage volumes** and share common dependencies.
+* **Ephemeral Nature:** Pods are temporary and disposable. They **do not have self-healing capabilities** on their own.
+
+---
+
+## 🛠️ Management & Orchestration
+Because Pods are ephemeral, they are rarely managed as standalone objects in production. Instead, they are managed by **Controllers or Operators** that handle replication, fault tolerance, and self-healing.
+
+### Common Controllers:
+* Deployments
+* ReplicaSets
+* DaemonSets
+* Jobs
+
+> **Note:** When managed by a controller, the Pod's specific configuration is nested inside the controller's definition using a **Pod Template**.
+
+---
+
+## 📄 Manifest Structure (YAML vs. Imperative)
+
+### 1. Declarative Method (YAML Template)
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    run: nginx-pod
+spec:
+  containers:
+  - name: nginx-pod
+    image: nginx:1.22.1
+    ports:
+    - containerPort: 80
+
+```
+
+* **Required Fields:** `apiVersion` (always `v1` for Pods), `kind` (Pod), `metadata` (names, labels), and `spec` (defines the desired container state, evaluated by the `kubelet`).
+
+
+### 2. Imperative Method (Quick Run)
+
+To run a Pod instantly without a file:
+
+```bash
+kubectl run nginx-pod --image=nginx:1.22.1 --port=80
+
+```
+
+### 3. Generating a Starter Template (The Lifecycle Lifesaver)
+
+To safely generate a YAML or JSON blueprint file without actually executing it in the cluster, use a dry run:
+
+* **YAML:** `kubectl run nginx-pod --image=nginx:1.22.1 --port=80 --dry-run=client -o yaml > nginx-pod.yaml`
+* **JSON:** `kubectl run nginx-pod --image=nginx:1.22.1 --port=80 --dry-run=client -o json > nginx-pod.json`
+
+---
+
+## 📟 Essential Pod Commands
+
+* **Deploy/Update from file:** `kubectl apply -f nginx-pod.yaml` (or `kubectl create -f nginx-pod.yaml`)
+* **List all pods:** `kubectl get pods`
+* **View running configuration (YAML):** `kubectl get pod nginx-pod -o yaml`
+* **View running configuration (JSON):** `kubectl get pod nginx-pod -o json`
+* **Inspect / Debug a pod:** `kubectl describe pod nginx-pod`
+* **Delete a pod:** `kubectl delete pod nginx-pod`
+
+---
+**Containers are created directly on the host machine, not "inside" some magical physical bubble called a Pod.**
+
+A Pod is not a virtual machine, and it is not a physical cage. A Pod is an **illusion** created by the Linux kernel using two features: **Namespaces** (for isolation) and **Cgroups** (for resource limits).
+
+Here is exactly how a Pod looks in memory, what it takes from the host, and how containers are born into it.
+
+---
+
+## 👁️ What a Pod Looks Like to the Host Machine (The Reality)
+
+If you log directly into the worker node (the host Linux machine) and look at the memory and CPU, **you won’t find anything called a "Pod."** To the host operating system, a Pod is just a collection of standard Linux processes that have been tricked into sharing the same sandbox.
+
+```
+WHAT KUBERNETES SEES (The Illusion):
++------------------------------------------+
+| Pod: my-web-pod                          |
+|  ├── [Container: Nginx App]              |
+|  └── [Container: Logger App]             |
++------------------------------------------+
+
+WHAT THE HOST OS SEES (The Reality):
+[Linux Kernel Memory / Process Tree]
+ ├── PID 4012 (pause)        <-- The Pod's anchor
+ ├── PID 4055 (nginx)        <-- The App (shares Network Namespace of 4012)
+ └── PID 4090 (fluentd)      <-- The Logger (shares Network Namespace of 4012)
+
+```
+
+---
+
+## 🧾 What Exactly Does a Pod Get From the Host System?
+
+When Kubernetes allocates resources for a Pod, it carves out specific items from the host kernel:
+
+1. **A Network Namespace (The IP):** The host allocates **one single IP address** from its network bridge and assigns it to a virtual network interface.
+2. **Cgroup Slices (The Resource Limits):** The host limits how much CPU and RAM those processes can collectively hog. If your Pod spec says `limits: memory: "512Mi"`, the host kernel enforces a hard 512MB limit on the total memory used by *all* containers in that group.
+3. **Storage Mounts:** The host takes a directory from its own hard drive (or a network drive) and maps it so the specific processes can see it.
+
+---
+
+## 🏗️ Step-by-Step: How a Container is Created "Inside" a Pod
+
+Since containers are created on the host, how do they end up sharing a Pod? This is where the **`pause` container** comes in.
+
+Every time you create a Pod, the Container Runtime (like `containerd` or Docker) performs a three-step dance on the host system:
+
+### Step 1: The Parent (Pause) Process is Born
+
+The host runtime creates a tiny container running a piece of code called `pause`. This process does absolutely nothing—it just goes to sleep. But because it exists, the host Linux kernel creates a clean **Network Namespace** and attaches a unique IP address to it.
+
+* *This `pause` process is the actual physical foundation of your Pod.*
+
+### Step 2: The Application Container is Born on the Host
+
+Next, the host runtime starts your actual application container (e.g., Nginx). It is created as a normal process directly on the host's CPU and memory.
+
+### Step 3: The Join
+
+Instead of giving Nginx its own new IP address, the runtime tells the Linux kernel: *"Take this new Nginx process, and force it to use the **Network Namespace** of the `pause` process we created in Step 1."*
+
+Because they share the exact same network sandbox, the Nginx container instantly inherits the Pod's IP address. If you add a third container, it joins the same namespace.
+
+---
+
+## 🧠 Summary: The Living Room Analogy
+
+Think of the host machine as a giant house.
+
+* A **Container** is just a person.
+* A **Pod** isn't a separate room built inside the house; a Pod is simply a rule that says: *"These three specific people must sit on the same couch, share the same plate of food (Storage), and talk using the same phone line (IP Address)."*
+
+They are all standing on the exact same living room floor (the Host OS), but they are bound together by the rules of the cluster.
+
+Does seeing how the `pause` container anchors the network help clear up how multiple containers can share one single IP address?
+
+
+----
+
+**A Pod is nothing more than a group of standard Linux processes engineered to share specific Namespaces and Cgroups.**
+
+
+
+## 🧩 1. Linux Namespaces (The Isolation Walls)
+
+A Linux **Namespace** is a feature of the Linux kernel that isolates system resources. When you place a process in a namespace, it behaves as if it is the *only* process on the computer with access to that resource. It cannot see or interact with anything outside its assigned boundary.
+
+The Linux kernel has several types of namespaces, but three are critical to understanding how Pods work:
+
+### 🌐 Network Namespace (`net`)
+
+* **What it does:** Isolates network devices, IP addresses, routing tables, and port mappings.
+* **How a Pod uses it:** When a Pod is created, Kubernetes spins up the `pause` container, creating **one single Network Namespace** for the Pod. Every container that joins the Pod later is forced into this exact same Network Namespace. Because they share it, Container A and Container B share the same IP address, can see the same ports, and can communicate using `localhost`.
+
+### 🗂️ Process ID Namespace (`pid`)
+
+* **What it does:** Isolates the process tree. Inside a PID namespace, a process can think it is **PID 1** (the master system process), while the host system sees it as a random, non-privileged process number like PID 24053.
+* **How a Pod uses it:** By default, containers in a Pod get their own isolated PID namespaces so they can't see each other's active processes. However, you can configure a Pod manifest to share a PID namespace (`shareProcessNamespace: true`), allowing Container A to view and signal processes running inside Container B.
+
+### 💾 Mount Namespace (`mnt`)
+
+* **What it does:** Isolates filesystem mount points. A process inside a mount namespace sees a completely different file tree than a process outside it.
+* **How a Pod uses it:** This is how your container thinks it is running a pure Ubuntu or Alpine OS filesystem, even though it is just running on a standard RedHat or Ubuntu host system.
+
+---
+
+## 📈 2. Control Groups / Cgroups (The Resource Budget)
+
+While namespaces block a process's *sight*, **Cgroups** block its *appetite*.
+
+Cgroups (Control Groups) are a Linux kernel feature that limits, polices, and accounts for resource usage (CPU, Memory, Disk I/O, Network bandwidth) for a collection of processes.
+
+```
+                  [ HOST OS KERNEL ]
+                           │
+       ┌───────────────────┴───────────────────┐
+       ▼                                       ▼
+  [ Namespace ]                           [ Cgroup ]
+"What can this process                 "How much CPU and RAM
+    SEE and TALK to?"                    can this process USE?"
+ (Isolates IP, Files, PIDs)              (Enforces 512MB RAM limits)
+
+```
+
+When you define resource limits in your Pod blueprint:
+
+```yaml
+resources:
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+```
+
+The host operating system creates a dedicated cgroup directory inside its kernel filesystem (typically under `/sys/fs/cgroup/`). The host tells the kernel: *"Any process associated with this Pod cannot collectively cross 512MB of RAM or use more than half of a CPU core."* If the containers try to allocate 513MB, the host kernel steps in and kills the offending container process with an **OOMKilled** (Out Of Memory) error.
+
+---
+
+## ⚙️ Putting It All Together: How a Container "Joins" a Pod
+
+This is the exact mechanism of how a container engine (like `containerd` or `Docker`) creates a container on the host machine but locks it inside a Pod's configuration.
+
+Linux provides a system call command called **`setns()`**. This command allows a brand new process to leave its own default namespace and **jump directly into an existing namespace** belonging to a different process.
+
+### The Step-by-Step Birth of a Pod:
+
+```
+Step 1: Host creates [Pause Process] ──► Generates Network Namespace #402
+                                                    │
+Step 2: Host spawns [Nginx Process]                 │
+          └─► Runtime executes setns() ─────────────┼──► Joins Network Namespace #402
+                                                    │
+Step 3: Host spawns [Logging Process]               │
+          └─► Runtime executes setns() ─────────────┘──► Joins Network Namespace #402
+
+```
+
+1. **The Infrastructure Anchor:** Kubernetes instructs the host container runtime to create the `pause` container process. The host Linux kernel sets up a fresh, unique Network Namespace (let's call it Namespace `#402`) and gives it a dedicated IP address.
+2. **The App Injection:** The runtime is told to start your application container (e.g., Nginx). The host OS launches the Nginx process directly onto the host's CPU and RAM.
+3. **The `setns()` Magic:** Before the Nginx process fully awakens, the container runtime invokes the Linux `setns()` system call. It essentially says to the Nginx process: *"Do not build your own network configuration. Instead, target file path `/proc/<pause-PID>/ns/net` and merge into Network Namespace #402."*
+4. **Enforcing the Limits:** The runtime drops all of these running host PIDs into the same directory within the host's `/sys/fs/cgroup/kubepods/` pathway, cementing their resource budgets.
+
+### 💡 The Takeaway
+
+A Pod is a collection of standard host processes that have been organized into a single family by the container runtime. They are isolated from the rest of the host by **Namespaces**, throttled by **Cgroups**, and welded together because they have all used `setns()` to step into the exact same network sandbox environment.
