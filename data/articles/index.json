@@ -10,6 +10,16 @@
     "type": "file"
   },
   {
+    "name": "from-bare-metal-to-kubernetes-node-the-transformation-journey.json",
+    "path": "data/articles/from-bare-metal-to-kubernetes-node-the-transformation-journey.json",
+    "type": "file"
+  },
+  {
+    "name": "from-bare-metal-to-kubernetes-node-the-transformation-journey.md",
+    "path": "data/articles/from-bare-metal-to-kubernetes-node-the-transformation-journey.md",
+    "type": "file"
+  },
+  {
     "name": "how-a-kubernetes-cluster-works.json",
     "path": "data/articles/how-a-kubernetes-cluster-works.json",
     "type": "file"
