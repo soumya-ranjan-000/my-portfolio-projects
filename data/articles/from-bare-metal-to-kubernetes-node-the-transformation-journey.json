@@ -1,0 +1,19 @@
+{
+  "id": "from-bare-metal-to-kubernetes-node-the-transformation-journey",
+  "slug": "from-bare-metal-to-kubernetes-node-the-transformation-journey",
+  "title": "From Bare Metal to Kubernetes Node: The Transformation Journey",
+  "excerpt": "Ever wonder how raw bare metal becomes a functional Kubernetes node? Step inside the infrastructure pipeline that bridges the gap between physical hardware and cloud-native orchestration.",
+  "coverImage": "https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/from-bare-metal-to-kubernetes-node-the-transformation-journey/1780414528347-f2da3eb7_ee28_425a_9bf7_05627f0d70d4.jpg",
+  "status": "published",
+  "tags": [
+    "Kubernetes",
+    "DevOps",
+    "Cloud Native",
+    "System Architecture",
+    "node"
+  ],
+  "notebooks": [],
+  "readTime": "4 min read",
+  "publishDate": "2026-06-02T00:00:00.000Z",
+  "updatedAt": "2026-06-02T15:36:23.433Z"
+}
