@@ -1330,7 +1330,7 @@ The loop triggers one last time for the final pod. Once `Old Pod A` is safely dr
 * The rolling update is complete.
 
 ```
-Traffic Pool: ──►                                                 [ New Pod 1 ]   [ New Pod 2 ]   [ New Pod 3 ]
+Traffic Pool: ──►  [ New Pod 1 ]   [ New Pod 2 ]   [ New Pod 3 ]
 
 ```
 
@@ -1341,3 +1341,4 @@ Traffic Pool: ──►                                                 [ New Po
 | **Ingress/Traffic** | Only receive traffic **after** passing the Readiness Probe. | Cut off from **new** traffic the instant they are marked `Terminating`. |
 | **Lifecycle** | Brought up incrementally based on `maxSurge` rules. | Given a `SIGTERM` grace period to cleanly finish existing jobs before being forcefully killed (`SIGKILL`). |
 
+# Services
