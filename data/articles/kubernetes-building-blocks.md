@@ -1418,3 +1418,31 @@ spec:
 ```
 
 With this configuration, any other Pod in the cluster can simply hit `http://backend-service` to safely communicate with your backend, completely insulated from the chaos of individual Pod lifecycles.
+
+---
+In Kubernetes, Pods are ephemeral — they get created and destroyed constantly, and their IP addresses change. A Service is a stable abstraction that sits in front of a group of Pods and gives you a consistent endpoint to reach them, regardless of which Pods are alive at any moment.
+Services use label selectors to find the Pods they should route traffic to. As long as a Pod has the right labels, the Service will include it automatically.
+Let me show you the four main Service types:
+
+![image.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/kubernetes-building-blocks/1781804708110-image.png)
+
+One Service exists across the entire cluster — it's not per-node. The Service is a cluster-level object with a single stable IP (ClusterIP). What runs on each node is kube-proxy, which just programs local routing rules so that node knows how to handle traffic destined for the Service.
+
+
+![image.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/kubernetes-building-blocks/1781805325454-image.png)
+
+
+**One Service exists across the entire cluster** — it's not per-node. The Service is a cluster-level object with a single stable IP (ClusterIP). What runs on each node is **kube-proxy**, which just programs local routing rules so that node knows how to handle traffic destined for the Service.To make it crystal clear:
+
+**There is only ONE Service object** — it lives in the control plane (stored in etcd). It has one ClusterIP. It doesn't belong to any node.
+
+**What runs on every node is `kube-proxy`** — a daemon process that watches the API Server for Service and Endpoint changes. Whenever a new Service is created or a Pod comes/goes, `kube-proxy` updates the local `iptables` (or `ipvs`) rules on that node so it knows: "if traffic is heading for `10.96.0.1:80`, redirect it to one of these real Pod IPs."
+
+So the flow is:
+
+1. You create one Service → stored once in the cluster
+2. `kube-proxy` on Node 1 reads it → writes iptables rules on Node 1
+3. `kube-proxy` on Node 2 reads the same Service → writes the same iptables rules on Node 2
+4. Now any Pod on any node that hits `10.96.0.1:80` gets routed correctly — the iptables rule on that node intercepts and redirects the packet
+
+The Service itself never touches the nodes. It's the `kube-proxy` agents that do the legwork of translating the Service's virtual IP into actual Pod routing on each machine.
