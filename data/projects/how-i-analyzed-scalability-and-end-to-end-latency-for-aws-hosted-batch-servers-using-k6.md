@@ -366,8 +366,9 @@ class OneRequestPerSecondUser(HttpUser):
 
 `constant(1)` guarantees that each simulated user waits exactly one second between task executions.
 
-my rps grpah
 
+![Observed RPS Decline Due to Increasing Response Time.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/projects/how-i-analyzed-scalability-and-end-to-end-latency-for-aws-hosted-batch-servers-using-k6/1781942570307-Observed_RPS_Decline_Due_to_Increasing_Response_Time.png)
+text
 
 After reviewing my performance report, the SRE raised a question:
 
