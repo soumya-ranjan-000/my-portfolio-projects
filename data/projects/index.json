@@ -20,6 +20,16 @@
     "type": "file"
   },
   {
+    "name": "how-i-analyzed-scalability-and-end-to-end-latency-for-aws-hosted-batch-servers-using-k6.json",
+    "path": "data/projects/how-i-analyzed-scalability-and-end-to-end-latency-for-aws-hosted-batch-servers-using-k6.json",
+    "type": "file"
+  },
+  {
+    "name": "how-i-analyzed-scalability-and-end-to-end-latency-for-aws-hosted-batch-servers-using-k6.md",
+    "path": "data/projects/how-i-analyzed-scalability-and-end-to-end-latency-for-aws-hosted-batch-servers-using-k6.md",
+    "type": "file"
+  },
+  {
     "name": "robot-playwright.json",
     "path": "data/projects/robot-playwright.json",
     "type": "file"
