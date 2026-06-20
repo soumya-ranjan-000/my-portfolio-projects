@@ -310,7 +310,7 @@ As a result:
 
 ---
 
-# Final Improvement – Background Execution
+## Final Improvement – Background Execution
 
 To solve this problem, I enhanced the AppleScript automation.
 
@@ -325,7 +325,7 @@ This ensured that tests continued running even if my terminal session disconnect
 
 ---
 
-# Results
+## Results
 
 This approach enabled significantly longer and more reliable test executions.
 
@@ -348,7 +348,7 @@ This automation greatly improved reliability, reduced manual effort, and enabled
 
 ---
 
-## The New Problem That Arose
+# The New Problem That Arose (declining rps graph)
 
 Since the application is expected to support **1 request per second (RPS) per user**, I wrote my Locust script in the following way to ensure that each worker sends exactly one request every second to the target server.
 
@@ -412,5 +412,97 @@ This is the ideal scenario and maintains a steady 1 RPS per user.
 In this case, the user cannot maintain 1 request per second because the request itself takes longer than one second to complete.
 
 As response times increase, each virtual user becomes blocked waiting for responses, resulting in a gradual decline in the overall RPS. Therefore, even though the script is configured for 1 request per second, the actual throughput becomes dependent on the application's response time.
+
+---
+# Why I Chose K6 to Solve This Problem
+
+After identifying the limitation with Locust, I started looking for an alternative tool that could generate requests at a fixed rate, independent of the application's response time.
+
+The main challenge was that I needed to simulate **1 request per second continuously**, regardless of whether the previous request had completed or not.
+
+With Locust, each virtual user executes tasks sequentially. As a result, a user cannot send a new request until the previous request receives a response. This behavior caused the actual RPS to drop whenever the application's response time exceeded one second.
+
+Since my objective was to evaluate the application's performance under a constant incoming load, I needed a tool that could maintain a fixed request arrival rate rather than relying on user-based execution.
+
+### Why K6?
+
+K6 provides a scenario executor called **constant-arrival-rate**, which is specifically designed for this use case.
+
+Unlike Locust, K6 focuses on maintaining a target request rate. It continuously injects requests at the configured rate and automatically creates additional virtual users whenever existing users are busy waiting for responses.
+
+As a result, the configured RPS remains stable even when response times increase.
+
+### How K6 Handles the Same Scenario
+
+Suppose I configure K6 to generate **1 request per second**.
+
+#### Scenario 1: Response Time = 30 ms
+
+```text
+Request 1 sent
+→ Response received in 30 ms
+→ Request 2 sent after 1 second
+
+RPS maintained = 1
+```
+
+#### Scenario 2: Response Time = 1.5 seconds
+
+```text
+Request 1 sent
+→ Still waiting for response
+
+After 1 second:
+→ K6 creates another available VU if required
+→ Request 2 is sent
+
+RPS maintained = 1
+```
+
+In this case, K6 does not wait for the first request to complete before sending the next request. Instead, it allocates additional virtual users to maintain the configured arrival rate.
+
+### What This Means for My Performance Testing
+
+My goal was not to test how many requests a single user could send.
+
+My goal was to verify how the batch servers behave when they continuously receive **1 request per second** from the client side.
+
+Specifically, I needed to evaluate:
+
+* Initial acknowledgement response time
+* Auto Scaling Group (ASG) behavior
+* Batch processing duration
+* End-to-end response delivery to the client server
+* System stability under sustained load
+
+To achieve this, maintaining a consistent incoming request rate was critical.
+
+K6's arrival-rate model aligned perfectly with this requirement because it guarantees the target request rate while adapting the number of virtual users behind the scenes.
+
+### Example K6 Configuration
+
+```javascript
+export const options = {
+  scenarios: {
+    batch_load_test: {
+      executor: "constant-arrival-rate",
+      rate: 1,               // 1 request per second
+      timeUnit: "1s",
+      duration: "30m",
+      preAllocatedVUs: 10,
+      maxVUs: 100
+    }
+  }
+};
+```
+
+### Conclusion
+
+I selected K6 because it allowed me to generate a true, constant request arrival rate, which was the actual requirement of the performance test.
+
+While Locust's user-based execution model caused RPS to decline when response times increased, K6's arrival-rate model maintained the desired request rate by dynamically allocating additional virtual users.
+
+This ensured that the batch servers were continuously subjected to the intended workload, allowing me to accurately evaluate application performance, auto-scaling behavior, and end-to-end processing characteristics.
+
 
 
