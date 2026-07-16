@@ -1,5 +1,3 @@
-# 🚧 One challenge I didn't expect while building an Agentic AI testing framework
-
 One challenge I didn't expect while building an Agentic AI testing framework was answering a very simple question:
 
 > **"What actually happened inside the agent?"**
@@ -110,3 +108,6 @@ Agentic AI testing also needs to verify **how** the system reached that result.
 Without observability, we're only validating the final answer while missing the entire reasoning and execution process behind it.
 
 That's why **observability isn't just a debugging feature anymore—it's a fundamental requirement for building reliable Agentic AI testing frameworks.**
+
+
+![ChatGPT Image Jul 17, 2026, 01_25_53 AM.png](https://raw.githubusercontent.com/soumya-ranjan-000/image-hosting/main/articles/things-to-remember-before-building-agentic-ai-testing-framework/1784231905681-ChatGPT_Image_Jul_17__2026__01_25_53_AM.png)
