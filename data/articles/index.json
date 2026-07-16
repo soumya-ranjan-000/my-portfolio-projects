@@ -58,5 +58,15 @@
     "name": "the-cloud-native-journey.md",
     "path": "data/articles/the-cloud-native-journey.md",
     "type": "file"
+  },
+  {
+    "name": "things-to-remember-before-building-agentic-ai-testing-framework.json",
+    "path": "data/articles/things-to-remember-before-building-agentic-ai-testing-framework.json",
+    "type": "file"
+  },
+  {
+    "name": "things-to-remember-before-building-agentic-ai-testing-framework.md",
+    "path": "data/articles/things-to-remember-before-building-agentic-ai-testing-framework.md",
+    "type": "file"
   }
 ]
